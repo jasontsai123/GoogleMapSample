@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Showing Pixel and Tile Coordinates</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <style>
+    /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+    #map {
+      height: 100%;
+    }
+
+    /* Optional: Makes the sample page fill the window. */
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map" class="card text-center" style="height: 48rem; width: 80rem;"></div>
+
+  <div class="card text-center" style="width: 48rem;">
+    <img
+      src="https://blobscdn.gitbook.com/v0/b/gitbook-28427.appspot.com/o/assets%2F-LozhRQSl1F2flklG3VH%2F-Ls84BLoJu9_KTq7LKaL%2F-Ls84KrFet3kJoxTBame%2FGoogleMap%E9%A1%8C%E7%9B%AE.jpg?alt=media&token=ae60d8fb-8881-4745-b33a-787d23efa725"
+      class="card-img-top" alt="...">
+    <div class="card-body">
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label for="inputAddress">地址</label>
+          <input type="text" class="form-control" id="inputAddress" placeholder="請輸入查詢的地址">
+        </div>
+        <div class="form-group col-2 ">
+          <label for="inputLatitude">經度</label>
+          <input type="text" class="form-control" id="inputLatitude" placeholder="請輸入經度">
+        </div>
+        <div class="form-group col-2">
+          <label for="inputLongitude">緯度</label>
+          <input type="text" class="form-control" id="inputLongitude" placeholder="請輸入緯度">
+        </div>
+      </div>
+      <input onclick="codeAddress();" class="btn btn-outline-primary" type="button" value="查詢">
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+    integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+    integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+    crossorigin="anonymous"></script>
+  <script>
+    var map;
+    var geoCoder;
+    var address;
+    var markers = [];
+    function initMap() {
+      var TaipeiStation = new google.maps.LatLng(25.04782370362326, 121.51694297790527);
+      geoCoder = new google.maps.Geocoder();
+
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: TaipeiStation,
+        zoom: 16
+      });
+
+      // var coordInfoWindow = new google.maps.InfoWindow();
+      // coordInfoWindow.setContent(createInfoWindowContent(TaipeiStation, map.getZoom()));
+      // coordInfoWindow.setPosition(TaipeiStation);
+      // coordInfoWindow.open(map);
+
+      // map.addListener('zoom_changed', function () {
+      //   coordInfoWindow.setContent(createInfoWindowContent(TaipeiStation, map.getZoom()));
+      //   coordInfoWindow.open(map);
+      // });
+
+      //初始定位點
+      address="台北車站";
+      addMarker(TaipeiStation);
+
+      // This event listener will call addMarker() when the map is clicked.
+      map.addListener('click', function (event) {
+        deleteMarkers();
+        addMarker(event.latLng);
+      });
+    }
+
+    function codeAddress() {
+        address = document.getElementById('inputAddress').value;
+        
+        geoCoder.geocode({ 'address': address }, function (results, status) {
+          if (status == 'OK') {
+            map.setCenter(results[0].geometry.location);
+            deleteMarkers();
+            addMarker(results[0].geometry.location);
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+      }
+
+    function geocodeAddressByLatLng(latlng) {
+      geoCoder.geocode({ 'location': latlng }, function (results, status) {
+          if (status === 'OK') {
+            if (results[0]) {
+              address = results[0].formatted_address;
+            } else {
+              window.alert('No results found');
+              address = 'No results found';
+            }
+          } else {
+            window.alert('Geocoder failed due to: ' + status);
+            address = 'Geocoder failed due to: ' + status;
+          }
+        });
+      }
+
+    // Adds a marker to the map and push to the array.
+    function addMarker(location) {
+      var marker = new google.maps.Marker({
+        position: location,
+        map: map
+      });
+      var latlng = {lat: parseFloat(location.lat()), lng: parseFloat(location.lng())};
+      geocodeAddressByLatLng(latlng);
+
+      document.getElementById('inputLatitude').value = location.lat();
+      document.getElementById('inputLongitude').value = location.lng();
+      document.getElementById('inputAddress').value = address;
+      
+      markers.push(marker);
+    }
+
+    // Sets the map on all markers in the array.
+    function setMapOnAll(map) {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(map);
+      }
+    }
+
+    // Removes the markers from the map, but keeps them in the array.
+    function clearMarkers() {
+      setMapOnAll(null);
+    }
+
+    // Shows any markers currently in the array.
+    function showMarkers() {
+      setMapOnAll(map);
+    }
+
+    // Deletes all markers in the array by removing references to them.
+    function deleteMarkers() {
+      clearMarkers();
+      markers = [];
+    }
+
+    // var TILE_SIZE = 256;
+
+    // function createInfoWindowContent(latLng, zoom) {
+    //   var scale = 1 << zoom;
+
+    //   var worldCoordinate = project(latLng);
+
+    //   var pixelCoordinate = new google.maps.Point(
+    //     Math.floor(worldCoordinate.x * scale),
+    //     Math.floor(worldCoordinate.y * scale));
+
+    //   var tileCoordinate = new google.maps.Point(
+    //     Math.floor(worldCoordinate.x * scale / TILE_SIZE),
+    //     Math.floor(worldCoordinate.y * scale / TILE_SIZE));
+
+    //   return [
+    //     '台北車站',
+    //     'LatLng: ' + latLng,
+    //     'Zoom level: ' + zoom,
+    //     'World Coordinate: ' + worldCoordinate,
+    //     'Pixel Coordinate: ' + pixelCoordinate,
+    //     'Tile Coordinate: ' + tileCoordinate
+    //   ].join('<br>');
+    // }
+
+    // // The mapping between latitude, longitude and pixels is defined by the web
+    // // mercator projection.
+    // function project(latLng) {
+    //   var siny = Math.sin(latLng.lat() * Math.PI / 180);
+
+    //   // Truncating to 0.9999 effectively limits latitude to 89.189. This is
+    //   // about a third of a tile past the edge of the world tile.
+    //   siny = Math.min(Math.max(siny, -0.9999), 0.9999);
+
+    //   return new google.maps.Point(
+    //     TILE_SIZE * (0.5 + latLng.lng() / 360),
+    //     TILE_SIZE * (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)));
+    // }
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAwcAlz5HBCuHojimVdtuR3J37BpjqyK5I&callback=initMap">
+    </script>
+</body>
+
+</html>
